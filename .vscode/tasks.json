@@ -8,7 +8,6 @@
             "label": "gcc build active file",
             "command": "gcc",
             "args": [
-                "-std=c11",
                 "-I",
                 "${workspaceFolder}/external/include",
                 "-g",
