@@ -16,37 +16,62 @@ typedef uint64_t color;
 struct color_item
 {
     color key;
+    int count;
 };
 
-struct color_held
+struct color_holds
 {
     color key;
-    struct color_item *held_by;
+    struct color_item *holds;
 };
 
-struct color_held *held_map;
+struct color_holds *hold_map;
+strpool_t pool;
+
+int count_bags_helper(color bag, int count, int depth)
+{
+    struct color_holds hold = hmgets(hold_map, bag);
+    int sum = 1;
+    for (int i = 0; i < hmlen(hold.holds); ++i)
+    {
+        int hc = hold.holds[i].count;
+        sum += hc * count_bags_helper(hold.holds[i].key, hc, depth + 1);
+    }
+    for (int i = 0; i <= depth; ++i)
+    {
+        if (i < depth)
+        {
+            printf("|");
+        }
+        else
+        {
+            printf("-");
+        }
+    }
+    printf("%s(x%d) %d\t\t\t\t\t = %d\n", strpool_cstr(&pool, bag), count, sum, count * sum);
+    return sum;
+}
+
+int count_bags(char *search)
+{
+    color bag = strpool_inject(&pool, search, strlen(search));
+    return count_bags_helper(bag, 1, 0);
+}
 
 int main(int argc, char *argv[])
 {
-    strpool_t pool;
     strpool_init(&pool, NULL);
 
     FILE *file = fopen("input_07.txt", "r");
 
-    char *search_str = "shiny gold";
-    color search = strpool_inject(&pool, search_str, strlen(search_str));
-
     char buffer[512] = {0};
     while (fgets(buffer, 512, file))
     {
-        char *holder = strtok(buffer, ":");
-        color holder_color = strpool_inject(&pool, holder, strlen(holder));
+        char *holder_str = strtok(buffer, ":");
+        color holder_color = strpool_inject(&pool, holder_str, strlen(holder_str));
 
-        if (search == holder_color)
-        {
-            int p = 0;
-        }
-        printf("%s\n", holder);
+        hmputs(hold_map, ((struct color_holds){.key = holder_color}));
+        struct color_holds *holder = hmgetp(hold_map, holder_color);
 
         char *contains = strtok(NULL, ":");
         if (contains[0] != '\n')
@@ -60,47 +85,70 @@ int main(int argc, char *argv[])
                     len--;
                 }
                 char *num_end = strstr(curr, " ");
-                //long value = strtol(curr, &num_end, 10);
+                long count = strtol(curr, &num_end, 10);
                 color curr_color = strpool_inject(&pool, num_end + 1, len - (num_end - curr + 1));
-                if (hmgeti(held_map, curr_color) < 0)
-                {
-                    hmputs(held_map, ((struct color_held){.key = curr_color}));
-                }
-                struct color_held *held = hmgetp(held_map, curr_color);
-                hmputs(held->held_by, ((struct color_item){.key = holder_color}));
-                printf("%s held by %s\n", strpool_cstr(&pool, curr_color), holder);
+
+                hmputs(holder->holds, ((struct color_item){
+                                          .key = curr_color,
+                                          .count = count,
+                                      }));
+
                 curr = strtok(NULL, ",");
             }
         }
     }
 
-    color *stack = NULL;
-    struct color_item *visited = NULL;
-    arrput(stack, strpool_inject(&pool, "shiny gold", strlen("shiny gold")));
-    int count = -1;
-    while (arrlen(stack) > 0)
-    {
-        color curr = arrpop(stack);
-        printf("%s\n", strpool_cstr(&pool, curr));
-        ++count;
-        if (hmgeti(held_map, curr) >= 0)
-        {
-            struct color_item *held_by = hmgets(held_map, curr).held_by;
-            printf("%s held by", strpool_cstr(&pool, curr));
-            for (int i = 0; i < hmlen(held_by); ++i)
-            {
-                if (hmgeti(visited, held_by[i].key) < 0)
-                {
-                    arrput(stack, held_by[i].key);
-                    hmputs(visited, ((struct color_item){.key = held_by[i].key}));
-                    printf(" %s", strpool_cstr(&pool, held_by[i].key));
-                }
-            }
-            printf("\n");
-        }
-    }
+    printf("%d\n", count_bags("shiny gold"));
 
-    printf("%d\n", count);
+    // |         striped purple(x2) 1
+    // |      posh salmon(x4) 1
+    // |      plaid cyan(x4) 1
+    // |      clear plum(x3) 1
+    // |     vibrant green(x4) 12
+    // |     dotted purple(x3) 1
+    // |     vibrant turquoise(x1) 1
+    // |    vibrant indigo(x3) 55
+    // |    vibrant turquoise(x4) 1
+    // |   dim coral(x5) 170
+    // |     striped purple(x2) 1
+    // |      posh salmon(x4) 1
+    // |      plaid cyan(x4) 1
+    // |      clear plum(x3) 1
+    // |     vibrant green(x4) 12
+    // |     dotted purple(x3) 1
+    // |     vibrant turquoise(x1) 1
+    // |    vibrant indigo(x4) 55
+    // |     pale blue(x1) 1
+    // |     clear plum(x4) 1
+    // |     wavy yellow(x5) 1
+    // |     dotted purple(x1) 1
+    // |    pale crimson(x2) 12
+    // |    clear plum(x2) 1
+    // |   dull gray(x1) 247
+    // |     wavy yellow(x5) 1
+    // |    muted brown(x1) 6
+    // |   posh tomato(x2) 7
+    // |  dotted chartreuse(x1) 1112
+    // |  pale blue(x2) 1
+    // |   wavy yellow(x5) 1
+    // |  muted brown(x3) 6
+    // |    wavy yellow(x5) 1
+    // |   muted brown(x1) 6
+    // |  posh tomato(x1) 7
+    // | muted orange(x5) 1140
+    // |   posh salmon(x4) 1
+    // |   plaid cyan(x4) 1
+    // |   clear plum(x3) 1
+    // |  vibrant green(x5) 12
+    // | faded tan(x2) 61
+    // |   dotted purple(x5) 1
+    // |   shiny brown(x4) 1
+    // |  bright bronze(x4) 10
+    // | faded orange(x3) 41
+    // |  dotted purple(x5) 1
+    // |  vibrant turquoise(x5) 1
+    // | dull brown(x1) 11
+    // shiny gold(x1) 5957
 
     getc(stdin);
 
