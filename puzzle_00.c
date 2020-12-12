@@ -7,8 +7,7 @@
 int main(int argc, char *argv[])
 {
     FILE *file = fopen("input_00.txt", "r");
-    if (!file)
-    {
+    if (!file) {
         printf("Failed to open input file.\n");
         return 0;
     }
@@ -18,8 +17,7 @@ int main(int argc, char *argv[])
 
     int num = 0;
 
-    while (fscanf(file, "%d\n", &num) == 1)
-    {
+    while (fscanf(file, "%d\n", &num) == 1) {
         arrput(numbers, num);
     }
 
@@ -28,28 +26,24 @@ int main(int argc, char *argv[])
     size_t len = arrlen(numbers);
     int result = 0;
 
-    for (int x = 0; x < len - 1 && result == 0; ++x)
-    {
+    for (int x = 0; x < len - 1 && result == 0; ++x) {
         int a = numbers[x];
 
-        for (int y = x + 1; y < len && result == 0; ++y)
-        {
+        for (int y = x + 1; y < len && result == 0; ++y) {
             int b = numbers[y];
-            if (a + b == 2020)
-            {
+            if (a + b == 2020) {
                 result = a * b;
             }
         }
     }
 
-    if (result > 0)
-    {
+    if (result > 0) {
         printf("Result: %d\n", result);
-    }
-    else
-    {
+    } else {
         printf("No result found for input.\n");
     }
+
+    getc(stdin);
 
     return 0;
 }
