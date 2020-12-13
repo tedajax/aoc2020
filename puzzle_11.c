@@ -11,11 +11,6 @@ typedef char seatmap[HEIGHT][WIDTH + 1];
 
 seatmap seats = {0};
 
-bool valid(int x, int y)
-{
-    return !(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT);
-}
-
 // dir 0-7 starts 1, 0, moves counter clockwise
 int vel[16] = {1, 0, 1, -1, 0, -1, -1, -1, -1, 0, -1, 1, 0, 1, 1, 1};
 bool cast(int x, int y, int dir)
@@ -24,7 +19,7 @@ bool cast(int x, int y, int dir)
     int vy = vel[dir * 2 + 1];
 
     int px = x, py = y;
-    while (valid(px, py)) {
+    while (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
         px += vx;
         py += vy;
         if (seats[py][px] == 'L') {
@@ -83,11 +78,12 @@ int main(int argc, char* argv[])
     int row = 0;
     FILE* file = fopen("input_11.txt", "r");
     while (fscanf(file, "%s\n", &seats[row++]) == 1) {
-        printf("%s\n", seats[row - 1]);
     }
     fclose(file);
 
+    int iter = 0;
     while (next()) {
+        ++iter;
     }
 
     int count = 0;
@@ -97,9 +93,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    print_seats();
-    printf("%d\n", count);
-
+    printf("equilibrium after %d iterations, %d seats occupied.\n", iter, count);
     getc(stdin);
 
     return 0;
