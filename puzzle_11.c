@@ -48,15 +48,12 @@ bool next(void)
 
     for (int y = 0; y < HEIGHT; ++y) {
         for (int x = 0; x < WIDTH; ++x) {
-            int seat_score = score(x, y);
-            if (seats[y][x] == 'L' && seat_score == 0) {
+            if (seats[y][x] == 'L' && score(x, y) == 0) {
                 new[y][x] = '#';
                 changed = true;
-            } else if (seats[y][x] == '#' && seat_score >= 5) {
+            } else if (seats[y][x] == '#' && score(x, y) >= 5) {
                 new[y][x] = 'L';
                 changed = true;
-            } else {
-                new[y][x] = seats[y][x];
             }
         }
     }
