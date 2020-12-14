@@ -83,12 +83,7 @@ int main(int argc, char* argv[])
         }
     }
 
-<<<<<<< HEAD
     printf("equilibrium after %d iterations, %d seats occupied.\n", iter, count);
-=======
-    printf("%d\n", count);
-
->>>>>>> day 13 part 1
     getc(stdin);
 
     return 0;
