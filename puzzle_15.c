@@ -3,11 +3,6 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
-struct entry {
-    int key;
-    int last_turn;
-};
-
 int main(int argc, char* argv[])
 {
     enum { LEN = 7 };
@@ -19,18 +14,16 @@ int main(int argc, char* argv[])
 
     int turn = 1;
     int spoken = 0;
-    int was_first = 1;
-    for (int i = 0; i < LEN; ++i) {
-        spoken = numbers[i];
-        hmput(map[0], numbers[i], turn);
-        ++turn;
-    }
-
-    while (turn <= 30000000) {
-        if (hmgeti(map[1], spoken) < 0) {
-            spoken = 0;
+    int max_turn = 30000000;
+    while (turn <= max_turn) {
+        if (turn <= LEN) {
+            spoken = numbers[turn - 1];
         } else {
-            spoken = hmget(map[0], spoken) - hmget(map[1], spoken);
+            if (hmgeti(map[1], spoken) < 0) {
+                spoken = 0;
+            } else {
+                spoken = hmget(map[0], spoken) - hmget(map[1], spoken);
+            }
         }
 
         if (hmgeti(map[0], spoken) >= 0) {
@@ -38,8 +31,11 @@ int main(int argc, char* argv[])
         }
         hmput(map[0], spoken, turn);
 
-        if (turn % 10000 == 0) {
-            printf("  %02.2f%%\r", turn / 300000.0f);
+        if (max_turn / 100 > 0) {
+            if (turn % (max_turn / 100) == 0) {
+                printf(
+                    " processing........................... %2.0f%%\r", turn * 100.0f / max_turn);
+            }
         }
 
         ++turn;
