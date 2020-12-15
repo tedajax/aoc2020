@@ -40,33 +40,39 @@ uint64_t calc_masked(uint64_t val, uint64_t mask, uint64_t maskval)
     return ret;
 }
 
-struct entry {
+struct mem_block {
     uint64_t key;
     uint64_t val;
 };
 
-struct entry* mem;
+int mem_write_count = 0;
+int mem_alloc_count = 0;
+struct mem_block* mem;
 
-void wmem(uint64_t addr, uint64_t val)
+void write(struct mem_block* mem, uint64_t addr, uint64_t val)
 {
-    hmputs(mem, ((struct entry){.key = addr, .val = val}));
+    if (hmgeti(mem, addr) < 0) {
+        mem_alloc_count++;
+    }
+    mem_write_count++;
+    hmputs(mem, ((struct mem_block){.key = addr, .val = val}));
 }
 
-void write(uint64_t addr, uint64_t val, uint64_t mask, uint64_t maskv, int i)
+void write_addrs(struct mem_block* mem, uint64_t addr, uint64_t val, uint64_t mask, uint64_t maskv, int i)
 {
     if (i >= 36) {
-        wmem(addr, val);
+        write(mem, addr, val);
     } else {
         uint64_t flag = 1llu << i;
         if ((mask & flag) != 0) {
             if ((maskv & flag) == 0) {
-                write(addr, val, mask, maskv, i + 1);
+                write_addrs(mem, addr, val, mask, maskv, i + 1);
             } else {
-                write(addr | flag, val, mask, maskv, i + 1);
+                write_addrs(mem, addr | flag, val, mask, maskv, i + 1);
             }
         } else {
-            write(addr & ~flag, val, mask, maskv, i + 1);
-            write(addr | flag, val, mask, maskv, i + 1);
+            write_addrs(mem, addr & ~flag, val, mask, maskv, i + 1);
+            write_addrs(mem, addr | flag, val, mask, maskv, i + 1);
         }
     }
 }
@@ -75,6 +81,8 @@ int main(int argc, char* argv[])
 {
     struct operation ops[1024];
     int op_count = 0;
+
+    arrsetcap(mem, 70000);
 
     FILE* file = fopen("input_14.txt", "r");
 
@@ -114,19 +122,18 @@ int main(int argc, char* argv[])
     }
     fclose(file);
 
-    uint64_t* memory = (uint64_t*)malloc(sizeof(uint64_t) * 68719476736);
-    uint64_t regmask = 0, regmaskv = 0;
+    uint64_t sys_mask = 0, sys_maskv = 0;
     for (int i = 0; i < op_count; ++i) {
         operation op = ops[i];
 
         switch (op.optype) {
         case optype_mem:
-            write(op.mem.addr, op.mem.value, regmask, regmaskv, 0);
+            write_addrs(op.mem.addr, op.mem.value, sys_mask, sys_maskv, 0);
             break;
 
         case optype_mask:
-            regmask = op.mask.mask;
-            regmaskv = op.mask.val;
+            sys_mask = op.mask.mask;
+            sys_maskv = op.mask.val;
             break;
         }
     }
@@ -138,9 +145,9 @@ int main(int argc, char* argv[])
 
     printf("sum: %llu\n", sum);
 
-    getc(stdin);
+    printf("writes: %d\nallocs: %d\n", mem_write_count, mem_alloc_count);
 
-    free(memory);
+    getc(stdin);
 
     return 0;
 }
