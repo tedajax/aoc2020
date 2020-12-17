@@ -4,6 +4,7 @@
             "name": "Win64",
             "includePath": [
                 "${workspaceFolder}/external/include/**",
+                "${vcpkgRoot}/x64-mingw-static/include/**"
             ],
             "defines": [
                 "_DEBUG",

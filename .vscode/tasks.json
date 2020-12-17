@@ -10,8 +10,14 @@
             "args": [
                 "-I",
                 "${workspaceFolder}/external/include",
+                "-I",
+                "${env:VCPKG_ROOT}/installed/x64-mingw-static/include",
                 "-g",
                 "${file}",
+                "-L",
+                "${env:VCPKG_ROOT}/installed/x64-mingw-static/lib",
+                "-l",
+                "xxhash",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.exe"
             ],
