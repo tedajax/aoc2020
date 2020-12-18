@@ -19,7 +19,9 @@ const char* input = ".#..####"
 
 const XXH64_hash_t K_SEED = 0xf00d;
 
-typedef int32_t point[4];
+enum { K_DIM = 4 };
+
+typedef int32_t point[K_DIM];
 
 struct cell {
     uint64_t key;
@@ -41,7 +43,7 @@ int active_state = 0;
 
 void grow_bounds(struct world_state* world, point pos)
 {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < K_DIM; ++i) {
         if (pos[i] < world->bounds.min[i]) {
             world->bounds.min[i] = pos[i];
         }
@@ -58,14 +60,8 @@ void set_cell(struct world_state* world, point pos, bool value)
     struct cell c = (struct cell){
         .key = hash,
         .value = value,
-        .pos =
-            {
-                [0] = pos[0],
-                [1] = pos[1],
-                [2] = pos[2],
-                [3] = pos[3],
-            },
     };
+    memcpy(&c.pos, pos, sizeof(point));
     hmputs(world->cell_map, c);
 }
 
@@ -91,6 +87,8 @@ void populate_neighbors(struct world_state* world)
         point pos;
         memcpy(pos, world->cell_map[i].pos, sizeof(point));
         bool val = false;
+        point offset = {0};
+
         if (try_get_cell(world, pos, &val) && val) {
             for (int32_t x = -1; x <= 1; ++x) {
                 for (int32_t y = -1; y <= 1; ++y) {
@@ -140,27 +138,6 @@ void clear_state(struct world_state* world)
     hmfree(world->cell_map);
 }
 
-void print_state(struct world_state* world)
-{
-    printf("--\n");
-    for (int32_t z = world->bounds.min[2]; z <= world->bounds.max[2]; ++z) {
-        printf("z=%d\n", z);
-        for (int32_t y = world->bounds.min[1]; y <= world->bounds.max[1]; ++y) {
-            for (int32_t x = world->bounds.min[0]; x <= world->bounds.max[0]; ++x) {
-                bool val = false;
-                point pos;
-                pos[0] = x;
-                pos[1] = y;
-                pos[2] = z;
-                try_get_cell(world, pos, &val);
-                printf("%c", (val) ? '#' : '.');
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-}
-
 int count_cubes(struct world_state* world)
 {
     int count = 0;
@@ -180,14 +157,13 @@ int main(int argc, char* argv[])
             x = 0;
         }
 
-        set_cell(&state[0], (point){x, y, 0, 0}, (*c == '#'));
+        point p = {0};
+        p[0] = x;
+        p[1] = y;
+        set_cell(&state[0], p, (*c == '#'));
         c++;
         x++;
     }
-
-    // print_state(&state[0]);
-
-    getc(stdin);
 
     for (int i = 0; i < 6; ++i) {
         int next_state = (active_state + 1) % 2;
@@ -207,7 +183,6 @@ int main(int argc, char* argv[])
         active_state = (active_state + 1) % 2;
     }
 
-    // print_state(&state[active_state]);
     printf("%d\n", count_cubes(&state[active_state]));
 
     getc(stdin);
